@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   Play,
@@ -13,6 +13,8 @@ import {
   Quote,
   MapPin,
   MessageCircle,
+  Menu,
+  X,
   } from "lucide-react";
 import ToursPage from "./ToursPage";
 
@@ -362,61 +364,229 @@ export default function WhenChaiMetToastBaseSite() {
   const [activeWord, setActiveWord] = useState(0);
   const rotatingWord = floatingWords[activeWord % floatingWords.length];
 
+  const base = import.meta.env.BASE_URL || "/";
   const [path, setPath] = useState(window.location.pathname);
+  const [showHeader, setShowHeader] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  // don't reference `lastScrollY` here (it's declared below) to avoid temporal dead zone
+  const lastScrollY = useRef(typeof window !== "undefined" ? window.scrollY : 0);
+
   useEffect(() => {
     const onPop = () => setPath(window.location.pathname);
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
+  
+
+  useEffect(() => {
+    const onScroll = () => {
+      const current = window.scrollY;
+      const delta = current - lastScrollY.current;
+      // always show near top
+      if (current < 80) {
+        setShowHeader(true);
+        lastScrollY.current = current;
+        return;
+      }
+      // smaller threshold for responsiveness (lowered for trackpad precision)
+      let newShow = showHeader;
+      if (delta < -2) {
+        setShowHeader(true);
+        newShow = true;
+      } else if (delta > 2 && current > 100) {
+        setShowHeader(false);
+        setMobileOpen(false);
+        newShow = false;
+      }
+      lastScrollY.current = current;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    // also respond to wheel (desktop) and mouse near top
+    const onWheel = (e) => {
+      if (e.deltaY < 0) {
+        setShowHeader(true);
+      } else if (e.deltaY > 0 && window.scrollY > 120) {
+        setShowHeader(false);
+      }
+    };
+    const onMouseMove = (e) => {
+      if (e.clientY < 80) setShowHeader(true);
+    };
+    window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("mousemove", onMouseMove);
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("mousemove", onMouseMove);
+    };
+  }, []);
+
+
+  const normalize = (p) => {
+    if (!p) return p;
+    // ensure leading slash
+    if (!p.startsWith("/")) p = `/${p}`;
+    // avoid double slashes when joining with base
+    return p.replace(/\/+/g, "/");
+  };
+
+  const toWithBase = (to) => {
+    if (!to) return base;
+    // if `to` is an absolute path starting with '/', strip leading slash and join with base
+    if (to.startsWith("/")) {
+      return normalize(`${base}${to.slice(1)}`);
+    }
+    // hashes or relative
+    return normalize(`${base}${to}`);
+  };
+
   const navigate = (to) => {
-    if (window.location.pathname !== to) {
-      history.pushState({}, "", to);
-      setPath(to);
+    const full = toWithBase(to);
+    if (window.location.pathname + window.location.search + window.location.hash !== full) {
+      history.pushState({}, "", full);
+      setPath(full);
       window.scrollTo(0, 0);
     }
   };
 
+  const headerClass = `z-[9999] border-b border-[#1E2430]/10 bg-[#F6EBDD]/90 backdrop-blur-xl`;
+  const headerStyle = {
+    position: "fixed",
+    left: 0,
+    right: 0,
+    top: 0,
+    transform: showHeader ? "translateY(0)" : "translateY(-110%)",
+    opacity: showHeader ? 1 : 0,
+    transition: "transform 220ms cubic-bezier(.2,.9,.2,1), opacity 180ms ease",
+    zIndex: 99999,
+    pointerEvents: showHeader ? "auto" : "none",
+  };
+
+  // ensure header stacks above other content
+  // keep presentation controlled by tailwind classes; increase z-index for robustness
+
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#F6EBDD] text-[#1E2430]">
+    <div className="min-h-screen pt-10 md:pt-12 lg:pt-16 overflow-x-hidden bg-[#F6EBDD] text-[#1E2430]">
       <div className="fixed inset-0 -z-20 bg-[radial-gradient(circle_at_15%_20%,rgba(242,200,75,0.16),transparent_22%),radial-gradient(circle_at_85%_10%,rgba(216,163,178,0.24),transparent_26%),radial-gradient(circle_at_50%_80%,rgba(47,124,140,0.10),transparent_24%),linear-gradient(180deg,#F6EBDD_0%,#FFF7EF_45%,#F6EBDD_100%)]" />
       <div className="fixed inset-0 -z-10 opacity-40 bg-[linear-gradient(rgba(30,36,48,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(30,36,48,0.04)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
-      <header className="sticky top-0 z-50 border-b border-[#1E2430]/10 bg-[#F6EBDD]/90 backdrop-blur-xl">
+      <header style={headerStyle} className={headerClass}>
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-6 lg:px-8">
           <div className="mt-1 flex items-center gap-3">
             <img
-             src={`${import.meta.env.BASE_URL}logo-wcmt.png`}
-             alt="WCMT Logo"
-             className="h-10 w-auto object-contain"
+              src={`${import.meta.env.BASE_URL}logo-wcmt.png`}
+              alt="WCMT Logo"
+              className="h-10 w-auto object-contain cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/");
+              }}
             />
           </div>
           <nav className="hidden items-center gap-6 md:flex">
-            <NavLink href="#world" active>
+            <NavLink
+              href="#world"
+              active={path !== toWithBase("/tours")}
+              onClick={(e) => {
+                if (path === toWithBase("/tours")) {
+                  e.preventDefault();
+                  navigate("#world");
+                }
+              }}
+            >
               World
             </NavLink>
-            <NavLink href="#music">Music</NavLink>
+            <NavLink
+              href="#music"
+              onClick={(e) => {
+                if (path === toWithBase("/tours")) {
+                  e.preventDefault();
+                  navigate("#music");
+                }
+              }}
+            >
+              Music
+            </NavLink>
             <NavLink
               href="/tours"
               onClick={(e) => {
                 e.preventDefault();
                 navigate("/tours");
               }}
+              active={path === toWithBase("/tours")}
             >
               Tour
             </NavLink>
-            <NavLink href="#community">Community</NavLink>
+            <NavLink
+              href="#community"
+              onClick={(e) => {
+                if (path === toWithBase("/tours")) {
+                  e.preventDefault();
+                  navigate("#community");
+                }
+              }}
+            >
+              Community
+            </NavLink>
           </nav>
-          <a
-            href="#join"
-            className="rounded-full border border-[#1E2430] px-4 py-2 text-sm font-medium text-[#1E2430] transition hover:bg-[#FFF7EF]"
-          >
-            Join the inner circle
-          </a>
+          <div className="flex items-center gap-4">
+            <a
+              href="#join"
+              className="hidden sm:inline-flex rounded-full border border-[#1E2430] px-4 py-2 text-sm font-medium text-[#1E2430] transition hover:bg-[#FFF7EF]"
+              onClick={(e) => {
+                if (path === toWithBase("/tours")) {
+                  e.preventDefault();
+                  navigate("#join");
+                }
+              }}
+            >
+              Join the inner circle
+            </a>
+            <div className="md:hidden">
+              <button
+                aria-label="Open menu"
+                onClick={() => setMobileOpen((v) => !v)}
+                className="inline-flex items-center justify-center rounded-md bg-transparent p-2 text-[#1E2430]"
+              >
+                {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
-      {path === "/tours" ? (
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 bg-[#FFF7EF] p-6 md:hidden">
+          <div className="mx-auto max-w-xs">
+            <div className="mb-6 flex items-center justify-between">
+              <img
+                src={`${import.meta.env.BASE_URL}logo-wcmt.png`}
+                alt="WCMT Logo"
+                className="h-10 w-auto object-contain cursor-pointer"
+                onClick={() => {
+                  setMobileOpen(false);
+                  navigate("/");
+                }}
+              />
+              <button aria-label="Close menu" onClick={() => setMobileOpen(false)} className="p-2">
+                <X className="h-6 w-6 text-[#1E2430]" />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <NavLink href="#world" onClick={(e) => { e.preventDefault(); setMobileOpen(false); navigate("#world"); }}>World</NavLink>
+              <NavLink href="#music" onClick={(e) => { e.preventDefault(); setMobileOpen(false); navigate("#music"); }}>Music</NavLink>
+              <NavLink href="/tours" onClick={(e) => { e.preventDefault(); setMobileOpen(false); navigate("/tours"); }}>Tour</NavLink>
+              <NavLink href="#community" onClick={(e) => { e.preventDefault(); setMobileOpen(false); navigate("#community"); }}>Community</NavLink>
+              <button className="mt-4 rounded-full border border-[#1E2430] px-4 py-2 text-sm" onClick={(e) => { e.preventDefault(); setMobileOpen(false); navigate("#join"); }}>Join the inner circle</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {path === toWithBase("/tours") ? (
         <main>
           <ToursPage upcomingTours={upcomingTours} />
         </main>
@@ -739,7 +909,19 @@ export default function WhenChaiMetToastBaseSite() {
             {footerLinks.map((link) => {
               const Icon = link.icon;
               return (
-                <a key={link.label} href={link.href} className="inline-flex items-center gap-2 text-[#F2C84B] hover:opacity-80">
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="inline-flex items-center gap-2 text-[#F2C84B] hover:opacity-80 cursor-pointer"
+                  onClick={(e) => {
+                    // when on tours page, navigate back to base + section
+                    if (path === toWithBase("/tours")) {
+                      e.preventDefault();
+                      // link.href is like "#music" or "#tour"; use navigate to go to base + hash
+                      navigate(link.href);
+                    }
+                  }}
+                >
                   <Icon className="h-4 w-4" /> {link.label}
                 </a>
               );
@@ -747,6 +929,7 @@ export default function WhenChaiMetToastBaseSite() {
           </div>
         </div>
       </footer>
+      
     </div>
   );
 }
