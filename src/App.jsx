@@ -385,7 +385,11 @@ export default function WhenChaiMetToastBaseSite() {
       <header className="sticky top-0 z-50 border-b border-[#1E2430]/10 bg-[#F6EBDD]/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-6 lg:px-8">
           <div className="mt-1 flex items-center gap-3">
-            <img src="/logo-wcmt.png" alt="WCMT Logo" className="h-10 w-auto object-contain" />
+            <img
+             src={`${import.meta.env.BASE_URL}logo-wcmt.png`}
+             alt="WCMT Logo"
+             className="h-10 w-auto object-contain"
+            />
           </div>
           <nav className="hidden items-center gap-6 md:flex">
             <NavLink href="#world" active>
@@ -721,7 +725,7 @@ export default function WhenChaiMetToastBaseSite() {
         <div className="mx-auto max-w-5xl px-5 text-center">
           <p className="mb-6 text-xs uppercase tracking-[0.35em] text-[#E8836D]">Signed by the band</p>
           <img
-            src="/about-signatures.png"
+            src={`${import.meta.env.BASE_URL}about-signatures.png`}
             alt="Band Signatures"
             className="mx-auto h-auto max-w-full opacity-90"
           />
