@@ -33,6 +33,7 @@ const releases = [
     title: "Small Town, Big Love, Little Homes",
     year: "Latest Era",
     mood: "home, memory, language, belonging",
+    link: "https://open.spotify.com/album/0FBJyrE6rFKntb4lRDA9GA?si=k473a8JoQ7iztJwpChmxgg",
     gradient:
       "linear-gradient(135deg, rgba(242,200,75,0.28), rgba(216,163,178,0.32), rgba(255,247,239,0.95))",
   },
@@ -40,6 +41,7 @@ const releases = [
     title: "LYTS",
     year: "2023",
     mood: "love, heartbreak, and emotional detail",
+    link: "https://open.spotify.com/album/4JU6oNxVeI004JSA2Fv8E7?si=XxbOe5ApRGSmxSHiGM9Kdg",
     gradient:
       "linear-gradient(135deg, rgba(216,163,178,0.34), rgba(30,36,48,0.18), rgba(255,247,239,0.92))",
   },
@@ -47,6 +49,7 @@ const releases = [
     title: "When We Feel Young",
     year: "2021",
     mood: "nostalgia, growth, and a wider global audience",
+    link: "https://open.spotify.com/album/6w9Q9E6CxC2bdSYmcS84t0?si=cNIOmJ3JSE2DNVW57L8xhw",
     gradient:
       "linear-gradient(135deg, rgba(242,200,75,0.24), rgba(125,191,207,0.22), rgba(47,124,140,0.16))",
   },
@@ -54,6 +57,7 @@ const releases = [
     title: "Believe",
     year: "2018",
     mood: "a warmer, early chapter in their evolution",
+    link: "https://open.spotify.com/album/4aSylUJ8AnwjQ6BO9dtgGk?si=JbCRkCbqSICExUrw0sSyXA",
     gradient:
       "linear-gradient(135deg, rgba(242,200,75,0.28), rgba(232,131,109,0.22), rgba(255,247,239,0.95))",
   },
@@ -61,6 +65,7 @@ const releases = [
     title: "Joy of Little Things",
     year: "2017",
     mood: "their debut EP and the beginning of the story",
+    link: "https://open.spotify.com/album/7fE8FHZSHRBuju5I0HBL1Y?si=jWXTz5uoR5OCIZ1jRipqdA",
     gradient:
       "linear-gradient(135deg, rgba(242,200,75,0.28), rgba(95,143,107,0.22), rgba(255,247,239,0.95))",
   },
@@ -764,9 +769,14 @@ export default function WhenChaiMetToastBaseSite() {
                               <h3 className="text-2xl font-semibold text-[#1E2430]">{release.title}</h3>
                               <p className="mt-3 text-sm leading-7 text-[#1E2430]/70">{release.mood}</p>
                             </div>
-                            <button className="inline-flex w-fit items-center gap-2 rounded-full border border-[#1E2430]/15 bg-[#F6EBDD] px-4 py-2 text-sm text-[#1E2430] transition group-hover:bg-[#F2C84B]">
-                              Explore release <ArrowRight className="h-4 w-4" />
-                            </button>
+                            <a
+                                href={release.link}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex w-fit items-center gap-2 rounded-full border border-[#1E2430]/15 bg-[#F6EBDD] px-4 py-2 text-sm text-[#1E2430] transition group-hover:bg-[#F2C84B]"
+                            >
+                               Explore release <ArrowRight className="h-4 w-4" />
+                            </a>
                           </div>
                         </div>
                       </article>
